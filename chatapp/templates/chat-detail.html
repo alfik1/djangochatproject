@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="col-12 col-lg-7 col-xl-9 mt-5">
+    <!-- Header section -->
+    <div class="py-2 px-4 border-bottom d-none d-lg-block">
+        <div class="d-flex align-items-center py-1">
+            <div class="position-relative">
+                <img src="{{ user_id.profile_picture.url }}" class="rounded-circle mr-1" alt="User Profile Picture"
+                    width="40" height="40">
+            </div>
+            <div class="flex-grow-1 pl-3 mt-5">
+                <strong>{{ user_id.user }}{{user_id.user.id }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat messages section -->
+    <div class="position-relative">
+        <div class="chat-messages p-4">
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="message">
+                    <p>{{ message.sender }} - {{ message.timestamp }}</p>
+                    <p>{{ message.message }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Send message form -->
+            <div class="send-message-form">
+                <h2>Send Message</h2>
+                <form action="{% url 'send_message' recipient_id=user.id %}" method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <style>
+        body {
+            margin-top: 20px;
+        }
+
+        .chat-online {
+            color: #34ce57
+        }
+
+        .chat-offline {
+            color: #e4606d
+        }
+
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            max-height: 800px;
+            overflow-y: scroll
+        }
+
+        .chat-message-left,
+        .chat-message-right {
+            display: flex;
+            flex-shrink: 0
+        }
+
+        .chat-message-left {
+            margin-right: auto
+        }
+
+        .chat-message-right {
+            flex-direction: row-reverse;
+            margin-left: auto
+        }
+
+        .py-3 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+
+        .px-4 {
+            padding-right: 1.5rem !important;
+            padding-left: 1.5rem !important;
+        }
+
+        .flex-grow-0 {
+            flex-grow: 0 !important;
+        }
+
+        .border-top {
+            border-top: 1px solid #dee2e6 !important;
+        }
+    </style>
+    {% endblock %}
