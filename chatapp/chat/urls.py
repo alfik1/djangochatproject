@@ -12,8 +12,8 @@ urlpatterns = [
     path('login',views.Signinview.as_view(),name= 'signin'),
     path("signout/",views.signout_view,name="signout"),
     path("chat/",views.ChatView.as_view(),name="chat"),
-    path("chat/<int:id>",views.ChatDetailView.as_view(),name="chat-detail"),
-    path('send-message/<int:recipient_id>/', views.SendMessageView.as_view(), name='send_message'),
+    path("details/<int:recipient_id>",views.ChatDetailView.as_view(),name="chat-detail"),
+    # path('send-message/<int:recipient_id>/', views.ChatDetailView.as_view(), name='send_message'),
     
 
         

@@ -52,35 +52,48 @@ class ChatView(TemplateView):
 
         context = super().get_context_data(**kwargs)
         context['user'] = UserProfile.objects.all()
+
         return context
     
 
 class ChatDetailView(TemplateView):
-    model = UserProfile
     template_name = 'chat-detail.html'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self,   **kwargs):
         context = super().get_context_data(**kwargs)
-        context['user_id'] = UserProfile.objects.get(id =kwargs['id'])
+        sender = DirectMessage.objects.filter(sender=self.request.user)
+        context['sender'] = sender
+        print(sender, "=====================================")
+        
+        recipient = self.kwargs['recipient_id']  # Assuming you have a recipient_id URL parameter
+        recipient_messages = DirectMessage.objects.filter(recipient_id=recipient)
+        context['recipient'] = recipient_messages
+        print(recipient,"++++++++++++++++++++++++++++++")
+        print(recipient_messages,"/**********")
+
         return context
 
+    # def post(self, request, *args, **kwargs):
+        
+    #     form = MessageForm(request.POST)
+    #     print(form.is_valid(),'?????????????????????????????????????????????????????????????')
+    #     if form.is_valid():
+    #         sender_id = request.user.id
+    #         recipient_id = kwargs['recipient_id']
+    #         message = form.cleaned_data['message']
 
-
+    #         # Create a new DirectMessage object
+    #         direct_message = DirectMessage.objects.create(
+    #             sender_id=sender_id,
+    #             recipient_id=recipient_id,
+    #             message=message
+    #         )
+    #         return redirect('chat-detail', id=recipient_id)
+    #     else:
+    #         print(kwargs,'///////////////////////////////////////////////////')
+    #         context = self.get_context_data(**kwargs)
+    #         context['form'] = form
+    #         return self.render_to_response(context)
     
-class SendMessageView(View):
-    def get(self, request, recipient_id):
-        form = MessageForm()
-        recipient = User.objects.get(id=recipient_id)
-        messages = DirectMessage.objects.filter(sender=request.user, recipient=recipient) | DirectMessage.objects.filter(sender=recipient, recipient=request.user)
-        messages = messages.order_by('timestamp')
-        context = {'form': form, 'user_id': recipient, 'messages': messages}
-        return render(request, 'chat-detail.html', context)
 
-    def post(self, request, recipient_id):
-        form = MessageForm(request.POST)
-        recipient = User.objects.get(id=recipient_id)
-        if form.is_valid():
-            message = form.cleaned_data['message']
-            DirectMessage.objects.create(sender=request.user, recipient=recipient, message=message)
-            
-        return redirect('send_message', recipient_id=recipient_id)
+

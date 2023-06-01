@@ -8,8 +8,6 @@ class UserProfile(models.Model):
     profile_picture = models.ImageField(upload_to='media', blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     
-    # Add any other user-related fields as per your requirements
-    
     def __str__(self):
         return self.user.username
 
