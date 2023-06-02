@@ -14,8 +14,6 @@ urlpatterns = [
     path("chat/",views.ChatView.as_view(),name="chat"),
     # path('chat-detail/<int:sender_id>/<int:recipient_id>/', views.ChatDetailView.as_view(), name='chat-detail'),
     path("details/<int:id>",views.ChatDetailView.as_view(),name="chat-detail"),
-    # path('send-message/<int:recipient_id>/', views.ChatDetailView.as_view(), name='send_message'),
-    
+    path('chat/<int:id>/', views.ChatDetailView.as_view(), name='send_message'),
 
-        
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
