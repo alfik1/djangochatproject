@@ -1,5 +1,7 @@
 
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from .models import *
 from django.views.generic import FormView, CreateView, TemplateView, View 
 from .forms import *
@@ -7,10 +9,15 @@ from django.contrib.auth import authenticate,login,logout
 from django.urls import reverse_lazy
 from django.db.models import Q
 from django.conf import settings
-from pusher import Pusher
-
+import pusher
 # Create your views here.
-
+pusher_client = pusher.Pusher(
+  app_id='1612620',
+  key='99d02ed61a52d34cd27c',
+  secret='a771625449c032e69817',
+  cluster='mt1',
+  ssl=True
+)
 #view for registration
 class SignupView(CreateView):
     model = UserProfile
@@ -81,33 +88,40 @@ class ChatDetailView(View):
         }
         return render(request, self.template_name, context)
     
-
-    
-    def post(self, request, *args, **kwargs):
+    def post(self, request,  *args, **kwargs):
         form = MessageForm(request.POST)
         if form.is_valid():
-            rec_id = kwargs.get('id')  
+            rec_id = kwargs.get('id')
             message = form.cleaned_data.get("message")
-            user = self.request.user 
+            user = self.request.user
             recipient = User.objects.get(id=rec_id)
             message = form.cleaned_data['message']
             DirectMessage.objects.create(sender=user, recipient=recipient, message=message)
+            print("message sended")
+            
+            pusher_client.trigger('my-channel1', 'my-event', {'message': message })
 
-            # Trigger a Pusher event to notify other users about the new message
-            pusher = Pusher(
-                app_id=settings.PUSHER_APP_ID,
-                key=settings.PUSHER_KEY,
-                secret=settings.PUSHER_SECRET,
-                cluster=settings.PUSHER_CLUSTER,
-                ssl=True
-            )
-            pusher.trigger('chat-room', 'new-message', {
-                'message': message,
-                'sender': user.username,
-            })
+            
+            return redirect('chat-detail', id=rec_id)
+        
+#***********************************************************************************************************
+    # new_message_html = render_to_string('chat-detail.html', {'message': message}, request=request)
+#***********************************************************************************************************
 
-        return redirect('chat-detail', id=rec_id)
+    # def post(self, request, *args, **kwargs):
+    #     form = MessageForm(request.POST)
+    #     if form.is_valid():
+    #         rec_id = kwargs.get('id')  
+    #         message = form.cleaned_data.get("message")
+    #         user = self.request.user 
+    #         recipient = User.objects.get(id=rec_id)
+    #         message = form.cleaned_data['message']
+    #         DirectMessage.objects.create(sender=user, recipient=recipient, message=message)
 
+    #         pusher_client.trigger('my-channel1', 'my-event', {'message': message })
+
+    #     
+#             return JsonResponse({'status': 'success'})
     
 
     

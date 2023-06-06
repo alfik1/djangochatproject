@@ -39,8 +39,11 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,400;1,400&amp;display=swap"
       rel="stylesheet"
     />
+
     <!-- Core theme CSS (includes Bootstrap)-->
     <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
   </head>
 
   <body id="page-top">
@@ -212,9 +215,8 @@
                   <div class="fw-bolder">Form submission successful!</div>
                   To activate this form, sign up at
                   <br />
-                  <a href="https://startbootstrap.com/solution/contact-forms"
-                    >https://startbootstrap.com/solution/contact-forms</a
-                  >
+                  <a href="https://startbootstrap.com/solution/contact-forms">
+                  </a>
                 </div>
               </div>
               <!-- Submit error message-->
@@ -251,66 +253,24 @@
     <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *-->
     <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
 
-<!-- * * * * * * * *    PUSHER  * * * * * * * * * * * * * * * * *-->   
-<script src="https://js.pusher.com/7.0/pusher.min.js"></script>
-<script>
-    // Initialize Pusher
-    var pusher = new Pusher('{{ settings.PUSHER_KEY }}', {
-        cluster: '{{ settings.PUSHER_CLUSTER }}',
-        encrypted: true
-    });
+    <!-- * * * * * * * *    PUSHER  * * * * * * * * * * * * * * * * *-->
+    {% block pusher %}
 
-    // Subscribe to the chat-room channel
-    var channel = pusher.subscribe('chat-room');
+    <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+    <script>
+      // Enable pusher logging - don't include this in production
+      Pusher.logToConsole = true;
 
-    // Listen for new-message events
-    channel.bind('new-message', function(data) {
-        var message = data.message;
-        var sender = data.sender;
-        var timestamp = new Date().toLocaleTimeString();
+      var pusher = new Pusher("99d02ed61a52d34cd27c", {
+        cluster: "mt1",
+      });
 
-        // Create a new message element
-        var messageElement = document.createElement('div');
-        messageElement.className = 'chat-message-left pb-4';
-
-        // Add the sender's avatar
-        var avatarElement = document.createElement('div');
-        var avatarImage = document.createElement('img');
-        avatarImage.src = 'https://bootdey.com/img/Content/avatar/avatar3.png';
-        avatarImage.className = 'rounded-circle mr-1';
-        avatarImage.alt = 'Sender Avatar';
-        avatarImage.width = '40';
-        avatarImage.height = '40';
-        avatarElement.appendChild(avatarImage);
-        messageElement.appendChild(avatarElement);
-
-        // Add the message content
-        var messageContent = document.createElement('div');
-        messageContent.className = 'flex-shrink-1 bg-light rounded py-2 px-3 ml-3';
-
-        var senderElement = document.createElement('div');
-        senderElement.className = 'font-weight-bold mb-1';
-        senderElement.textContent = sender;
-        messageContent.appendChild(senderElement);
-
-        var messageText = document.createTextNode(message);
-        messageContent.appendChild(messageText);
-
-        messageElement.appendChild(messageContent);
-
-        // Add the timestamp
-        var timestampElement = document.createElement('div');
-        timestampElement.className = 'text-muted small text-nowrap mt-2';
-        timestampElement.textContent = timestamp;
-        messageElement.appendChild(timestampElement);
-
-        // Add the new message to the chat messages container
-        var chatMessages = document.querySelector('.chat-messages');
-        chatMessages.appendChild(messageElement);
-    });
-</script>
-
-    
+      var channel = pusher.subscribe("my-channel1");
+      channel.bind("my-event", function (data) {
+        alert(JSON.stringify(data));
+      });
+    </script>
+    {% endblock %}
 
   </body>
 </html>
