@@ -56,48 +56,35 @@
 </style>
 
 <section class="p-lg-5 mt-5">
-    <div class="container p-0">
-
-        <div class="card">
-            <div class="row g-0">
-                <div class="col-12 col-lg-5 col-xl-3 border-right">
-
-                    <div class="px-4 d-none d-md-block">
-                        <div class="d-flex align-items-center ms-2">
-                            <div class="flex-grow-1">
-                                <input type="text" class="form-control my-3" placeholder="Search...">
-                            </div>
-                        </div>
-                    </div>
+    <div class="container p-0"> 
+        <div class="card border-success shadow-lg p-3 mb-5 bg-body-tertiary rounded">
+            <div class="row ">
+                <div class="col-lg col-xl border-right">
                     {% for usr in user %}
-                    {% if not usr.user.is_authenticated or usr.user != request.user %}
-                    <a href="{% url 'chat-detail' usr.user.id   %}"
-                        class="list-group-item list-group-item-action border-0 ms-3">
-                        <div class="badge bg-success float-right">5</div>
-                        {% if usr.profile_picture %}
-                        <div class="d-flex align-items-start">
-                            <img src="{{ usr.profile_picture.url }}" class="rounded-circle mr-1" width="40" height="40">
-                            {% else %}
-                            <div class="d-flex align-items-start">
-                                <i class="bi bi-person-circle fa-2x" style="width: 40px; height: 40 px;"></i>
-                                {% endif %}
-                                <div class="flex-grow-1 ml-3">
-                                    {{ usr.user }}{{ usr.user.id }}
-
+                        {% if not usr.user.is_authenticated or usr.user != request.user %}
+                            <a href="{% url 'chat-detail' usr.user.id %}" class="list-group-item list-group-item-action border-0 ms-3 mb-2">
+                                <div class="badge bg-success float-right">5</div>
+                                    {% if usr.profile_picture %}
+                                    <div class="d-flex align-items-start">
+                                        <img src="{{ usr.profile_picture.url }}" class="rounded-circle mr-1" width="40" height="40">
+                                    {% else %}
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-person-circle fa-2x" style="width: 40px; height: 40px;"></i>
+                                    {% endif %}
+                                    <div class="flex-grow-1 ml-3">
+                                            {{ usr.user }}{{ usr.user.id }}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </a>
-                    {% endif %}
-                    <hr>
+                            </a>
+                            <hr class="w-100" >
+                        {% endif %}
                     {% endfor %}
-                    <hr class="d-block d-lg-none mt-1 mb-0">
                 </div>
             </div>
         </div>
     </div>
-    </div>
 </section>
+
 
 
 

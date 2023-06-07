@@ -68,63 +68,41 @@ class ChatView(TemplateView):
     
 
 class ChatDetailView(View):
-    
     template_name = 'chat-detail.html'
 
-    
     def get(self, request, id):
         sender_id = request.user.id
         recipient_id = get_object_or_404(User, id=id)
-        # print(sender_id, "******************")
-        # print(recipient_id, "******************")
         query = Q(sender_id__in=[request.user.id, id]) & Q(recipient_id__in=[request.user.id, id])
         msgs = DirectMessage.objects.filter(query).order_by('timestamp')
-        # print(msgs)
         form = MessageForm()
         context = {
             'messages': msgs,
             'form': form,
-            'recipient_id':recipient_id
+            'recipient_id': recipient_id
         }
         return render(request, self.template_name, context)
-    
-    def post(self, request,  *args, **kwargs):
+
+    def post(self, request, id, *args, **kwargs):
         form = MessageForm(request.POST)
         if form.is_valid():
-            rec_id = kwargs.get('id')
+            rec_id = id
             message = form.cleaned_data.get("message")
-            user = self.request.user
-            recipient = User.objects.get(id=rec_id)
-            message = form.cleaned_data['message']
-            DirectMessage.objects.create(sender=user, recipient=recipient, message=message)
-            print("message sended")
-            
-            pusher_client.trigger('my-channel1', 'my-event', {'message': message })
+            sender = request.user
+            recipient = get_object_or_404(User, id=rec_id)
+            direct_message = DirectMessage.objects.create(sender=sender, recipient=recipient, message=message)
 
-            
+            pusher_client.trigger('my-channel', 'my-event', {
+                'message': direct_message.message,
+                'sender': direct_message.sender.username,
+                'recipient': direct_message.recipient.username
+            })
+
             return redirect('chat-detail', id=rec_id)
+        else:
+            # Handle form errors if needed
+            pass
         
-#***********************************************************************************************************
-    # new_message_html = render_to_string('chat-detail.html', {'message': message}, request=request)
-#***********************************************************************************************************
 
-    # def post(self, request, *args, **kwargs):
-    #     form = MessageForm(request.POST)
-    #     if form.is_valid():
-    #         rec_id = kwargs.get('id')  
-    #         message = form.cleaned_data.get("message")
-    #         user = self.request.user 
-    #         recipient = User.objects.get(id=rec_id)
-    #         message = form.cleaned_data['message']
-    #         DirectMessage.objects.create(sender=user, recipient=recipient, message=message)
-
-    #         pusher_client.trigger('my-channel1', 'my-event', {'message': message })
-
-    #     
-#             return JsonResponse({'status': 'success'})
-    
-
-    
-    
 
    
