@@ -84,18 +84,20 @@ class ChatDetailView(View):
         return render(request, self.template_name, context)
 
     def post(self, request, id, *args, **kwargs):
-        form = MessageForm(request.POST)
+        form = MessageForm(request.POST, request.FILES)  # Include request.FILES to handle file uploads
         if form.is_valid():
             rec_id = id
             message = form.cleaned_data.get("message")
+            file = form.cleaned_data.get("file")  # Get the uploaded file from the form
             sender = request.user
             recipient = get_object_or_404(User, id=rec_id)
-            direct_message = DirectMessage.objects.create(sender=sender, recipient=recipient, message=message)
+            direct_message = DirectMessage.objects.create(sender=sender, recipient=recipient, message=message, file=file)
 
             pusher_client.trigger('my-channel', 'my-event', {
-                'message': direct_message.message,
+                'message': direct_message.message ,
                 'sender': direct_message.sender.username,
-                'recipient': direct_message.recipient.username
+                'recipient': direct_message.recipient.username,
+                'file': direct_message.file.url if direct_message.file else None
             })
 
             return redirect('chat-detail', id=rec_id)
