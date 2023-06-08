@@ -14,5 +14,7 @@ urlpatterns = [
     path("chat/",views.ChatView.as_view(),name="chat"),
     path("details/<int:id>",views.ChatDetailView.as_view(),name="chat-detail"),
     path('chat/<int:id>/', views.ChatDetailView.as_view(), name='send_message'),
+    path('upload/<int:id>/', views.FileUploadView.as_view(), name='file-upload')
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

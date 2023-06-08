@@ -34,4 +34,4 @@ class LoginForm(forms.Form):
 
 class MessageForm(forms.Form):
     message = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your message'}))
-    file = forms.FileField(required=False, widget=forms.ClearableFileInput(attrs={'class': 'form-control-file'}))
+

@@ -5,7 +5,6 @@
     body {
         margin-top: 20px;
     }
-    
 
     .chat-online {
         color: #34ce57
@@ -19,7 +18,7 @@
         display: flex;
         flex-direction: column;
         max-height: 800px;
-        overflow-y: scroll
+        overflow-y: scroll;
     }
 
     .chat-message-left,
@@ -57,93 +56,112 @@
 </style>
 
 <section>
-    <div class="py-2 px-4 border-bottom d-none d-lg-block">
-        <div class="d-flex align-items-center py-1">
-            <div class="position-relative">
-                
-                <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Recipient Image" width="40" height="40">
-            </div>
-            <div class="flex-grow-1 pl-3">
-                <strong>{{ recipient_id.username }}</strong>
-                <div class="text-muted small"><em>Typing...</em></div>
-            </div>
+  <div class="py-2 px-4 border-bottom d-none d-lg-block">
+    <div class="d-flex align-items-center py-1">
+      <div class="position-relative">
+        <img src="{{ recipient_id.userprofile.profile_picture.url }}"
+          class="rounded-circle mr-1" alt="Recipient Image" width="40"
+          height="40">
+      </div>
+      <div class="flex-grow-1 pl-3">
+        <strong>{{ recipient_id.username }}</strong>
+        <div class="text-muted small"><em>Typing...</em></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="position-relative chat-background">
+    <div class="chat-messages p-4">
+      {% for message in messages %}
+      {% if message.sender == request.user %}
+      <!-- Sender message -->
+      <div class="chat-message-right mb-4">
+        <div>
+          <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
+          <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
         </div>
+        <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
+          <div class="font-weight-bold mb-1">You</div>
+          {{ message.message }}
+          {% if message.file %}
+          <a href="{{ message.file.url }}">Download File</a>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <!-- Recipient message -->
+      <div class="chat-message-left pb-4">
+        <div>
+          <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
+        </div>
+        <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+          <div class="font-weight-bold mb-1"></div>
+          {{ message.message }}
+          {% if message.file %}
+          <a href="{{ message.file.url }}">Download File</a>
+          {% endif %}
+        </div>
+        <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
+      </div>
+      {% endif %}
+      {% endfor %}
     </div>
+  
     
-    <div class="position-relative chat-background">
-        <div class="chat-messages p-4">
-            {% for message in messages %}
-              {% if message.sender == request.user %}
-                <!-- Sender message -->
-                <div class="chat-message-right mb-4">
-                  <div>
-                    <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
-                    <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
-                  </div>
-                  <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
-                    <div class="font-weight-bold mb-1">You</div>
-                    {{ message.message }}
-                    {% if message.file %}
-                    <a href="{{ message.file.url }}">Download File</a>
-                    {% endif %}
-                  </div>
-                </div>
-              {% else %}
-                <!-- Recipient message -->
-                <div class="chat-message-left pb-4">
-                  <div>
-                    <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
-                  </div>
-                  <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
-                    <div class="font-weight-bold mb-1"></div>
-                    {{ message.message }}
-                  </div>
-                  <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div> 
-        </div>         
-    </div>
 
+      
+   
+  
     <div class="flex-grow-0 py-3 px-4 border-top">
-        <form id="send-message-form" method="POST" action="{% url 'send_message' recipient_id.id %}">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Send Message</button>
-          </form>
-    </div>
+      <form id="send-message-form" method="POST" action="{% url 'send_message' recipient_id.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
 
+        <button type="submit" class="btn  btn-success mt-2">Send Message</button>
+      </form>
+      <form id="send-message-form"  method="POST" action="{% url 'file-upload' recipient_id.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="file" class="mt-3">Upload File</label>
+          <input type="file" name="file" id="file" class="form-control-file">
+          <button type="submit">Upload</button>
+        </div>
+        
+      </form>
+    </div>
+  
+    <div id="file-info"></div>
+  </div>
+  
 
-    </div>
-    </div>
 </section>
-{% block pusher %}{% endblock  %}
+{% block pusher %}{% endblock %}
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-    $(document).ready(function () {
-        // Enable pusher logging - don't include this in production
-        Pusher.logToConsole = true;
 
-        var pusher = new Pusher('99d02ed61a52d34cd27c', {
-            cluster: 'mt1'
-        });
+  $(document).ready(function () {
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
 
-        var channel = pusher.subscribe('my-channel');
-        channel.bind('my-event', function (data) {
-            // Handle the received message data
-            var message = data.message;
-            var sender = data.sender;
-            var recipient = data.recipient;
+    var pusher = new Pusher('99d02ed61a52d34cd27c', {
+      cluster: 'mt1'
+    });
 
-            // Append the new message to the chat messages container
-            var chatMessagesContainer = $('.chat-messages');
-            var newMessageHtml = '';
+    var channel = pusher.subscribe('my-channel');
+    channel.bind('my-event', function (data) {
+      // Handle the received message data
+      var message = data.message;
+      var sender = data.sender;
+      var recipient = data.recipient;
 
-            if (sender === "{{ request.user.username }}") {
-                newMessageHtml = `
+      // Append the new message to the chat messages container
+      var chatMessagesContainer = $('.chat-messages');
+      var newMessageHtml = '';
+
+      if (sender === "{{ request.user.username }}") {
+        newMessageHtml = `
         <div class="chat-message-right mb-4">
           <div>
             <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
@@ -154,8 +172,8 @@
           </div>
         </div>
       `;
-            } else {
-                newMessageHtml = `
+      } else {
+        newMessageHtml = `
         <div class="chat-message-left pb-4">
           <div>
             <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
@@ -166,38 +184,40 @@
           <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
         </div>
       `;
-            }
+      }
 
-            chatMessagesContainer.append(newMessageHtml);
-            scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
-        });
+      chatMessagesContainer.append(newMessageHtml);
+      scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+    });
 
-        $('#send-message-form').submit(function (event) {
-            event.preventDefault();  // Prevent default form submission
+    $('#send-message-form').submit(function (event) {
+      event.preventDefault();  // Prevent default form submission
 
-            var form = $(this);
-            var url = form.attr('action');
-            var formData = form.serialize();  // Serialize form data
+      var form = $(this);
+      var url = form.attr('action');
+      var formData = new FormData(form[0]);  // Use FormData to handle file upload
 
-            var message = form.find('#id_message').val();  // Get the value of the message input field
+      var message = form.find('#id_message').val();  // Get the value of the message input field
 
-            $.ajax({
-                type: 'POST',
-                url: url,
-                data: formData,
-                success: function (response) {
-                    console.log('Message sent successfully');  // Log success message
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+          console.log('Message sent successfully');  // Log success message
 
-                    // Trigger the Pusher event
-                    pusher.trigger('my-channel', 'my-event', {
-                        'message': message,
-                        'sender': "{{ request.user.username }}",
-                        'recipient': "{{ recipient_id.username }}"
-                    });
+          // Trigger the Pusher event
+          pusher.trigger('my-channel', 'my-event', {
+            'message': message,
+            'sender': "{{ request.user.username }}",
+            'recipient': "{{ recipient_id.username }}"
+          });
 
-                    // Append the new message to the chat messages container
-                    var chatMessagesContainer = $('.chat-messages');
-                    var newMessageHtml = `
+          // Append the new message to the chat messages container
+          var chatMessagesContainer = $('.chat-messages');
+          var newMessageHtml = `
           <div class="chat-message-left pb-4">
             <div>
               <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
@@ -208,34 +228,28 @@
             <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
           </div>
         `;
+          chatMessagesContainer.append(newMessageHtml);
+          scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
 
-                    chatMessagesContainer.append(newMessageHtml);
-                    scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+          form.find('#id_message').val('');  // Clear the message input field
 
-                    form.find('#id_message').val('');  // Clear the message input field
-
-                    if (form.find('#id_message').val() != '') {
-                        alert('Message sent and input cleared.');  // Display an alert if the message input field is cleared
-                    }
-                },
-                error: function (xhr, errmsg, err) {
-                    console.log('Error sending message');  // Log error message
-                }
-            });
-        });
-
-        // Function to scroll to the bottom of the chat messages container
-        function scrollToBottom(container) {
-            container.scrollTop(container[0].scrollHeight);
+          if (form.find('#file').val() != '') {
+            var fileInput = form.find('#file');
+            var fileInfo = $('#file-info');
+            fileInfo.text('Selected file: ' + fileInput[0].files[0].name);  // Display the selected file name in the file info element
+          }
+        },
+        error: function (xhr, errmsg, err) {
+          console.log('Error sending message');  // Log error message
         }
+      });
     });
 
-
+    // Function to scroll to the bottom of the chat messages container
+    function scrollToBottom(container) {
+      container.scrollTop(container[0].scrollHeight);
+    }
+  });
 </script>
-    
-  
-  
-  
-  
 
 {% endblock %}

@@ -10,6 +10,9 @@ from django.urls import reverse_lazy
 from django.db.models import Q
 from django.conf import settings
 import pusher
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .serializers import FileUploadSerializer
 # Create your views here.
 pusher_client = pusher.Pusher(
   app_id='1612620',
@@ -85,14 +88,19 @@ class ChatDetailView(View):
 
     def post(self, request, id, *args, **kwargs):
         form = MessageForm(request.POST, request.FILES)  # Include request.FILES to handle file uploads
+        print(request.FILES,"-----------------------")
+        print(request,"00000000000000000")
         if form.is_valid():
             rec_id = id
             message = form.cleaned_data.get("message")
-            file = form.cleaned_data.get("file")  # Get the uploaded file from the form
+            # file = request.FILES.get("file")  # Get the uploaded file from the form
             sender = request.user
             recipient = get_object_or_404(User, id=rec_id)
-            direct_message = DirectMessage.objects.create(sender=sender, recipient=recipient, message=message, file=file)
-
+            direct_message = DirectMessage.objects.create(sender=sender, recipient=recipient, message=message )
+            print(direct_message,"55555555555555555555555555")
+            # print(file,"/////////////////////////////")
+            
+            
             pusher_client.trigger('my-channel', 'my-event', {
                 'message': direct_message.message ,
                 'sender': direct_message.sender.username,
@@ -104,7 +112,22 @@ class ChatDetailView(View):
         else:
             # Handle form errors if needed
             pass
+    
         
+class FileUploadView(APIView):
+    def post(self, request, id, format=None):
+        serializer = FileUploadSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            recp_id = id
+            sender = request.user
+            recipient = get_object_or_404(User, id=recp_id) 
+            serializer.save(sender=sender, recipient=recipient) 
+            print(serializer.data,"==================")
+            return redirect('chat-detail',id=recp_id)
+        
+        return Response(serializer.errors, status=400)
+
 
 
    
