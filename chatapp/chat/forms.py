@@ -33,5 +33,5 @@ class LoginForm(forms.Form):
     
 
 class MessageForm(forms.Form):
-    message = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your message'}))
+    message = forms.CharField(label='', widget=forms.TextInput(attrs={'class': 'form-control mt-4', 'placeholder': 'Enter your message', 'style': 'width: 1200px; margin-left:200px'}))
 

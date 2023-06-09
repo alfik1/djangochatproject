@@ -2,66 +2,76 @@
 
 {% block content %}
 <style>
-    body {
-        margin-top: 20px;
-    }
+  body {
+    margin-top: 20px;
+  }
 
-    .chat-online {
-        color: #34ce57
-    }
+  .chat-online {
+    color: #34ce57
+  }
 
-    .chat-offline {
-        color: #e4606d
-    }
 
-    .chat-messages {
-        display: flex;
-        flex-direction: column;
-        max-height: 800px;
-        overflow-y: scroll;
-    }
+  .chat-offline {
+    color: #e4606d
+  }
 
-    .chat-message-left,
-    .chat-message-right {
-        display: flex;
-        flex-shrink: 0
-    }
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+    max-height: 800px;
+    overflow-y: scroll;
+  }
 
-    .chat-message-left {
-        margin-right: auto
-    }
+  .chat-message-left,
+  .chat-message-right {
+    display: flex;
+    flex-shrink: 0
+  }
 
-    .chat-message-right {
-        flex-direction: row-reverse;
-        margin-left: auto
-    }
+  .form-custom {
+    width: 568px;
+  }
 
-    .py-3 {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-    }
+  .form-button-wrapper {
+    display: flex;
+    align-items: center;
 
-    .px-4 {
-        padding-right: 1.5rem !important;
-        padding-left: 1.5rem !important;
-    }
+  }
 
-    .flex-grow-0 {
-        flex-grow: 0 !important;
-    }
+  .chat-message-left {
+    margin-right: auto
+  }
 
-    .border-top {
-        border-top: 1px solid #dee2e6 !important;
-    }
+  .chat-message-right {
+    flex-direction: row-reverse;
+    margin-left: auto
+  }
+
+  .py-3 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .px-4 {
+    padding-right: 1.5rem !important;
+    padding-left: 1.5rem !important;
+  }
+
+  .flex-grow-0 {
+    flex-grow: 0 !important;
+  }
+
+  .border-top {
+    border-top: 1px solid #dee2e6 !important;
+  }
 </style>
 
 <section>
   <div class="py-2 px-4 border-bottom d-none d-lg-block">
     <div class="d-flex align-items-center py-1">
       <div class="position-relative">
-        <img src="{{ recipient_id.userprofile.profile_picture.url }}"
-          class="rounded-circle mr-1" alt="Recipient Image" width="40"
-          height="40">
+        <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Recipient Image"
+          width="40" height="40">
       </div>
       <div class="flex-grow-1 pl-3">
         <strong>{{ recipient_id.username }}</strong>
@@ -77,7 +87,8 @@
       <!-- Sender message -->
       <div class="chat-message-right mb-4">
         <div>
-          <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
+          <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood"
+            width="40" height="40">
           <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
         </div>
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
@@ -92,7 +103,8 @@
       <!-- Recipient message -->
       <div class="chat-message-left pb-4">
         <div>
-          <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
+          <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman"
+            width="40" height="40">
         </div>
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
           <div class="font-weight-bold mb-1"></div>
@@ -106,33 +118,58 @@
       {% endif %}
       {% endfor %}
     </div>
-  
-    
 
-      
-   
-  
-    <div class="flex-grow-0 py-3 px-4 border-top">
-      <form id="send-message-form" method="POST" action="{% url 'send_message' recipient_id.id %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
 
-        <button type="submit" class="btn  btn-success mt-2">Send Message</button>
-      </form>
-      <form id="send-message-form"  method="POST" action="{% url 'file-upload' recipient_id.id %}" enctype="multipart/form-data">
+    <div class="flex-grow-0 py-3 px-4 border-top form-container" style="width: 1840px;">
+
+      <form id="send-message-form" method="POST" action="{% url 'send_message' recipient_id.id %}"
+        enctype="multipart/form-data">
+
         {% csrf_token %}
-        <div class="form-group">
-          <label for="file" class="mt-3">Upload File</label>
-          <input type="file" name="file" id="file" class="form-control-file">
-          <button type="submit">Upload</button>
+        <div class="form-button-wrapper mx-2 p-2">
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-success mt-2 rounded-circle mx-2"><i
+              class="fa-regular fa-paper-plane"></i></button>
+          <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            <i class="bi bi-paperclip"></i>
+          </button>
+
+
         </div>
-        
       </form>
+      <!-- Button trigger modal -->
+
+
+      <!-- Modal -->
+      <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="exampleModalLabel">Upload Your Files</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form id="send-message-form" method="POST" action="{% url 'file-upload' recipient_id.id %}"
+                enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                  <label for="file" class="mt-3 mb-5  ">Upload File</label>
+                  <input type="file" name="file" id="file" class="form-control-file">
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  
+
     <div id="file-info"></div>
   </div>
-  
+
 
 </section>
 {% block pusher %}{% endblock %}
@@ -156,68 +193,26 @@
       var sender = data.sender;
       var recipient = data.recipient;
 
-      // Append the new message to the chat messages container
-      var chatMessagesContainer = $('.chat-messages');
-      var newMessageHtml = '';
+      // Check if the recipient matches the selected recipient ID
+      if (recipient === "{{ recipient_id.username }}") {
+        // Append the new message to the chat messages container
+        var chatMessagesContainer = $('.chat-messages');
+        var newMessageHtml = '';
 
-      if (sender === "{{ request.user.username }}") {
-        newMessageHtml = `
-        <div class="chat-message-right mb-4">
-          <div>
-            <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
-            <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+        if (sender === "{{ request.user.username }}") {
+          newMessageHtml = `
+          <div class="chat-message-right mb-4">
+            <div>
+              <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
+              <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+            </div>
+            <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
+              ${message}
+            </div>
           </div>
-          <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
-            ${message}
-          </div>
-        </div>
-      `;
-      } else {
-        newMessageHtml = `
-        <div class="chat-message-left pb-4">
-          <div>
-            <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
-          </div>
-          <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
-            ${message}
-          </div>
-          <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
-        </div>
-      `;
-      }
-
-      chatMessagesContainer.append(newMessageHtml);
-      scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
-    });
-
-    $('#send-message-form').submit(function (event) {
-      event.preventDefault();  // Prevent default form submission
-
-      var form = $(this);
-      var url = form.attr('action');
-      var formData = new FormData(form[0]);  // Use FormData to handle file upload
-
-      var message = form.find('#id_message').val();  // Get the value of the message input field
-
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-          console.log('Message sent successfully');  // Log success message
-
-          // Trigger the Pusher event
-          pusher.trigger('my-channel', 'my-event', {
-            'message': message,
-            'sender': "{{ request.user.username }}",
-            'recipient': "{{ recipient_id.username }}"
-          });
-
-          // Append the new message to the chat messages container
-          var chatMessagesContainer = $('.chat-messages');
-          var newMessageHtml = `
+        `;
+        } else {
+          newMessageHtml = `
           <div class="chat-message-left pb-4">
             <div>
               <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
@@ -228,6 +223,59 @@
             <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
           </div>
         `;
+        }
+
+        chatMessagesContainer.append(newMessageHtml);
+        scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+      }
+    });
+
+    $('#send-message-form').submit(function (event) {
+      event.preventDefault(); // Prevent default form submission
+
+      var form = $(this);
+      var url = form.attr('action');
+      var formData = new FormData(form[0]); // Use FormData to handle form data including file
+
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+          console.log('Message sent successfully'); // Log success message
+
+          // Get the file information from the response
+          var file = response.file;
+          var fileUrl = file.url;
+          var fileName = file.name;
+
+          // Trigger the Pusher event
+          pusher.trigger('my-channel', 'my-event', {
+            'message': '',
+            'sender': "{{ request.user.username }}",
+            'recipient': "{{ recipient_id.username }}",
+            'file': {
+              'url': fileUrl,
+              'name': fileName
+            }
+
+          });
+
+          // Append the new message to the chat messages container
+          var chatMessagesContainer = $('.chat-messages');
+          var newMessageHtml = `
+            <div class="chat-message-left pb-4">
+              <div>
+                <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
+              </div>
+              <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+                ${message}
+              </div>
+              <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+            </div>
+          `;
           chatMessagesContainer.append(newMessageHtml);
           scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
 
