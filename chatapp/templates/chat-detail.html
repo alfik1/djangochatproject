@@ -7,12 +7,11 @@
   }
 
   .chat-online {
-    color: #34ce57
+    color: #34ce57;
   }
 
-
   .chat-offline {
-    color: #e4606d
+    color: #e4606d;
   }
 
   .chat-messages {
@@ -25,26 +24,26 @@
   .chat-message-left,
   .chat-message-right {
     display: flex;
-    flex-shrink: 0
+    flex-shrink: 0;
   }
 
   .form-custom {
-    width: 568px;
+    width: 100%;
+    max-width: 568px;
   }
 
   .form-button-wrapper {
     display: flex;
     align-items: center;
-
   }
 
   .chat-message-left {
-    margin-right: auto
+    margin-right: auto;
   }
 
   .chat-message-right {
     flex-direction: row-reverse;
-    margin-left: auto
+    margin-left: auto;
   }
 
   .py-3 {
@@ -63,6 +62,26 @@
 
   .border-top {
     border-top: 1px solid #dee2e6 !important;
+  }
+
+  /* Responsive Styles */
+
+  @media (max-width: 768px) {
+    .form-container {
+      width: 100%;
+    }
+
+    .chat-background {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .form-container {
+      max-width: 568px;
+    }
   }
 </style>
 
@@ -94,8 +113,8 @@
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
           <div class="font-weight-bold mb-1">You</div>
           {{ message.message }}
-          {% if message.file %}
-          <a href="{{ message.file.url }}">Download File</a>
+          {% if message.file_url %}
+          <p><a href="{{ message.file_url }}">{{ message.file_url }}</a></p>
           {% endif %}
         </div>
       </div>
@@ -109,8 +128,8 @@
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
           <div class="font-weight-bold mb-1"></div>
           {{ message.message }}
-          {% if message.file %}
-          <a href="{{ message.file.url }}">Download File</a>
+          {% if message.file_url %}
+          <p><a href="{{ message.file_url }}">{{ message.file_url }}</a></p>
           {% endif %}
         </div>
         <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
@@ -119,12 +138,9 @@
       {% endfor %}
     </div>
 
-
-    <div class="flex-grow-0 py-3 px-4 border-top form-container" style="width: 1840px;">
-
+    <div class="flex-grow-0 py-3 px-4 border-top form-container">
       <form id="send-message-form" method="POST" action="{% url 'send_message' recipient_id.id %}"
         enctype="multipart/form-data">
-
         {% csrf_token %}
         <div class="form-button-wrapper mx-2 p-2">
           {{ form.as_p }}
@@ -133,12 +149,10 @@
           <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#exampleModal">
             <i class="bi bi-paperclip"></i>
           </button>
-
-
         </div>
       </form>
-      <!-- Button trigger modal -->
 
+      <!-- Button trigger modal -->
 
       <!-- Modal -->
       <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -153,7 +167,7 @@
                 enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-group">
-                  <label for="file" class="mt-3 mb-5  ">Upload File</label>
+                  <label for="file" class="mt-3 mb-5">Upload File</label>
                   <input type="file" name="file" id="file" class="form-control-file">
                 </div>
                 <div class="modal-footer">
@@ -169,9 +183,8 @@
 
     <div id="file-info"></div>
   </div>
-
-
 </section>
+
 {% block pusher %}{% endblock %}
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -179,28 +192,30 @@
 <script>
 
   $(document).ready(function () {
-    // Enable pusher logging - don't include this in production
-    Pusher.logToConsole = true;
+  // Enable pusher logging - don't include this in production
+  Pusher.logToConsole = true;
 
-    var pusher = new Pusher('99d02ed61a52d34cd27c', {
-      cluster: 'mt1'
-    });
+  var pusher = new Pusher('99d02ed61a52d34cd27c', {
+    cluster: 'mt1'
+  });
 
-    var channel = pusher.subscribe('my-channel');
-    channel.bind('my-event', function (data) {
-      // Handle the received message data
-      var message = data.message;
-      var sender = data.sender;
-      var recipient = data.recipient;
+  var channel = pusher.subscribe('my-channel');
+  channel.bind('my-event', function (data) {
+    // Handle the received message data
+    var message = data.message;
+    var sender = data.sender;
+    var recipient = data.recipient;
+    var fileUrl = data.file_url;
 
-      // Check if the recipient matches the selected recipient ID
-      if (recipient === "{{ recipient_id.username }}") {
-        // Append the new message to the chat messages container
-        var chatMessagesContainer = $('.chat-messages');
-        var newMessageHtml = '';
+    console.log('Received file URL:', fileUrl);
+    // Check if the recipient matches the selected recipient ID
+    if (recipient === "{{ recipient_id.username }}") {
+      // Append the new message to the chat messages container
+      var chatMessagesContainer = $('.chat-messages');
+      var newMessageHtml = '';
 
-        if (sender === "{{ request.user.username }}") {
-          newMessageHtml = `
+      if (sender === "{{ request.user.username }}") {
+        newMessageHtml = `
           <div class="chat-message-right mb-4">
             <div>
               <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
@@ -209,10 +224,11 @@
             <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
               ${message}
             </div>
+            ${fileUrl ? `<a href="${fileUrl}" target="_blank">View File</a>` : ''}
           </div>
         `;
-        } else {
-          newMessageHtml = `
+      } else {
+        newMessageHtml = `
           <div class="chat-message-left pb-4">
             <div>
               <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
@@ -221,83 +237,80 @@
               ${message}
             </div>
             <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+            ${fileUrl ? `<a href="${fileUrl}" target="_blank">View File</a>` : ''}
           </div>
         `;
-        }
-
-        chatMessagesContainer.append(newMessageHtml);
-        scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
       }
-    });
 
-    $('#send-message-form').submit(function (event) {
-      event.preventDefault(); // Prevent default form submission
-
-      var form = $(this);
-      var url = form.attr('action');
-      var formData = new FormData(form[0]); // Use FormData to handle form data including file
-
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-          console.log('Message sent successfully'); // Log success message
-
-          // Get the file information from the response
-          var file = response.file;
-          var fileUrl = file.url;
-          var fileName = file.name;
-
-          // Trigger the Pusher event
-          pusher.trigger('my-channel', 'my-event', {
-            'message': '',
-            'sender': "{{ request.user.username }}",
-            'recipient': "{{ recipient_id.username }}",
-            'file': {
-              'url': fileUrl,
-              'name': fileName
-            }
-
-          });
-
-          // Append the new message to the chat messages container
-          var chatMessagesContainer = $('.chat-messages');
-          var newMessageHtml = `
-            <div class="chat-message-left pb-4">
-              <div>
-                <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
-              </div>
-              <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
-                ${message}
-              </div>
-              <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
-            </div>
-          `;
-          chatMessagesContainer.append(newMessageHtml);
-          scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
-
-          form.find('#id_message').val('');  // Clear the message input field
-
-          if (form.find('#file').val() != '') {
-            var fileInput = form.find('#file');
-            var fileInfo = $('#file-info');
-            fileInfo.text('Selected file: ' + fileInput[0].files[0].name);  // Display the selected file name in the file info element
-          }
-        },
-        error: function (xhr, errmsg, err) {
-          console.log('Error sending message');  // Log error message
-        }
-      });
-    });
-
-    // Function to scroll to the bottom of the chat messages container
-    function scrollToBottom(container) {
-      container.scrollTop(container[0].scrollHeight);
+      chatMessagesContainer.append(newMessageHtml);
+      scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
     }
   });
+
+ $('#send-message-form').submit(function (event) {
+  event.preventDefault(); // Prevent default form submission
+
+  var form = $(this);
+  var url = form.attr('action');
+  var formData = new FormData(form[0]); // Use FormData to handle form data including file
+
+  $.ajax({
+    type: 'POST',
+    url: url,
+    data: formData,
+    processData: false,
+    contentType: false,
+    success: function (response) {
+      console.log('Message sent successfully'); // Log success message
+
+      // Get the file URL from the response
+      var fileUrl = response.file;
+
+      // Trigger the Pusher event
+      pusher.trigger('my-channel', 'my-event', {
+        'message': '',
+        'sender': "{{ request.user.username }}",
+        'recipient': "{{ recipient_id.username }}",
+
+      });
+
+      // Append the new message to the chat messages container
+      var chatMessagesContainer = $('.chat-messages');
+      var newMessageHtml = `
+        <div class="chat-message-left pb-4">
+          <div>
+            <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
+          </div>
+          <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+            ${message}
+          </div>
+          <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+          ${fileUrl ? `<a href="${fileUrl}" target="_blank">View File</a>` : ''}
+        </div>
+      `;
+      chatMessagesContainer.append(newMessageHtml);
+      scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+
+      form.find('#id_message').val('');  // Clear the message input field
+
+      if (form.find('#file').val() != '') {
+        var fileInput = form.find('#file');
+        var fileInfo = $('#file-info');
+        fileInfo.text('Selected file: ' + fileInput[0].files[0].name);  // Display the selected file name in the file info element
+      }
+    },
+    error: function (xhr, errmsg, err) {
+      console.log('Error sending message');  // Log error message
+    }
+  });
+});
+
+  // Function to scroll to the bottom of the chat messages container
+  function scrollToBottom(container) {
+    container.scrollTop(container[0].scrollHeight);
+  }
+});
+
 </script>
 
 {% endblock %}
