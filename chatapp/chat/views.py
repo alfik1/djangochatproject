@@ -143,12 +143,12 @@ class FileUploadView(APIView):
             print(file_url, "****************************************")
 
             # Save the file and the file URL to the database
-            serializer.save(sender=sender, recipient=recipient, file=file_path, file_url=file_url)
-
-            return redirect('chat-detail', id=recp_id)
+            message = serializer.save(sender=sender, recipient=recipient, file=file_path, file_url=file_url)
+            message_data = {
+                'sender': message.sender.username,
+                'file_url': message.file_url,
+                'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            return JsonResponse(message_data)
 
         return Response(serializer.errors, status=400)
-
-
-
-   

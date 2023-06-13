@@ -1,4 +1,116 @@
 <script>
+
+  $(document).ready(function () {
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('99d02ed61a52d34cd27c', {
+      cluster: 'mt1'
+    });
+
+    var channel = pusher.subscribe('my-channel');
+    channel.bind('my-event', function (data) {
+      // Handle the received message data
+      var message = data.message;
+      var sender = data.sender;
+      var recipient = data.recipient;
+
+      // Append the new message to the chat messages container
+      var chatMessagesContainer = $('.chat-messages');
+      var newMessageHtml = '';
+
+      if (sender === "{{ request.user.username }}") {
+        newMessageHtml = `
+        <div class="chat-message-right mb-4">
+          <div>
+            <img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">
+            <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+          </div>
+          <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
+            ${message}
+          </div>
+        </div>
+      `;
+      } else {
+        newMessageHtml = `
+        <div class="chat-message-left pb-4">
+          <div>
+            <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
+          </div>
+          <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+            ${message}
+          </div>
+          <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+        </div>
+      `;
+      }
+
+      chatMessagesContainer.append(newMessageHtml);
+      scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+    });
+
+    $('#send-message-form').submit(function (event) {
+      event.preventDefault();  // Prevent default form submission
+
+      var form = $(this);
+      var url = form.attr('action');
+      var formData = form.serialize();  // Serialize form data
+
+      var message = form.find('#id_message').val();  // Get the value of the message input field
+
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: formData,
+        success: function (response) {
+          console.log('Message sent successfully');  // Log success message
+
+          // Trigger the Pusher event
+          pusher.trigger('my-channel', 'my-event', {
+            'message': message,
+            'sender': "{{ request.user.username }}",
+            'recipient': "{{ recipient_id.username }}"
+          });
+
+          // Append the new message to the chat messages container
+          var chatMessagesContainer = $('.chat-messages');
+          var newMessageHtml = `
+          <div class="chat-message-left pb-4">
+            <div>
+              <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
+            </div>
+            <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+              ${message}
+            </div>
+            <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+          </div>
+        `;
+
+          chatMessagesContainer.append(newMessageHtml);
+          scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+
+          form.find('#id_message').val('');  // Clear the message input field
+
+          if (form.find('#id_message').val() != '') {
+            alert('Message sent and input cleared.');  // Display an alert if the message input field is cleared
+          }
+        },
+        error: function (xhr, errmsg, err) {
+          console.log('Error sending message');  // Log error message
+        }
+      });
+    });
+
+    // Function to scroll to the bottom of the chat messages container
+    function scrollToBottom(container) {
+      container.scrollTop(container[0].scrollHeight);
+    }
+  });
+
+</script>
+    
+<script>
+  
   $(document).ready(function () {
     // Enable pusher logging - don't include this in production
     Pusher.logToConsole = true;

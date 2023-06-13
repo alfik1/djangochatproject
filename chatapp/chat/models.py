@@ -25,7 +25,7 @@ class DirectMessage(models.Model):
     sender = models.ForeignKey(User,on_delete=models.CASCADE,related_name="send_messages")
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     message = models.TextField()
-    file = models.ImageField(upload_to='media', blank=True, null=True)
+    file = models.FileField(upload_to='media', blank=True, null=True)
     file_url = models.URLField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     

@@ -63,6 +63,16 @@
   .border-top {
     border-top: 1px solid #dee2e6 !important;
   }
+  .file-preview-card {
+  width: 200px; /* Set the desired width */
+  height: 200px; /* Set the desired height */
+  border: 1px solid #ccc;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
   /* Responsive Styles */
 
@@ -83,6 +93,7 @@
       max-width: 568px;
     }
   }
+
 </style>
 
 <section>
@@ -113,9 +124,12 @@
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
           <div class="font-weight-bold mb-1">You</div>
           {{ message.message }}
-          {% if message.file_url %}
-          <p><a href="{{ message.file_url }}">{{ message.file_url }}</a></p>
-          {% endif %}
+          <div id="fileUrlContainer">
+            {% if message.file_url %}
+            <p><a href="{{ message.file_url }}">{{ message.file_url }}</a></p>
+            {% endif %}
+          </div>
+          
         </div>
       </div>
       {% else %}
@@ -128,9 +142,13 @@
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
           <div class="font-weight-bold mb-1"></div>
           {{ message.message }}
-          {% if message.file_url %}
-          <p><a href="{{ message.file_url }}">{{ message.file_url }}</a></p>
-          {% endif %}
+          <div id="fileUrlContainer">
+            {% if message.file_url %}
+            <p>
+              <a href="{{ message.file_url }}">{{ message.file_url }}</a>
+            </p>
+            {% endif %}
+          </div>
         </div>
         <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
       </div>
@@ -163,8 +181,7 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <form id="send-message-form" method="POST" action="{% url 'file-upload' recipient_id.id %}"
-                enctype="multipart/form-data">
+              <form id="send-message-form" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-group">
                   <label for="file" class="mt-3 mb-5">Upload File</label>
@@ -172,16 +189,15 @@
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                  <button type="submit" class="btn btn-primary">Upload</button>
+                  <button type="button" class="btn btn-primary" id="uploadButton">Upload</button>
                 </div>
               </form>
+                            
             </div>
           </div>
         </div>
       </div>
     </div>
-
-    <div id="file-info"></div>
   </div>
 </section>
 
@@ -190,26 +206,21 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-
   $(document).ready(function () {
-  // Enable pusher logging - don't include this in production
-  Pusher.logToConsole = true;
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
 
-  var pusher = new Pusher('99d02ed61a52d34cd27c', {
-    cluster: 'mt1'
-  });
+    var pusher = new Pusher('99d02ed61a52d34cd27c', {
+      cluster: 'mt1'
+    });
 
-  var channel = pusher.subscribe('my-channel');
-  channel.bind('my-event', function (data) {
-    // Handle the received message data
-    var message = data.message;
-    var sender = data.sender;
-    var recipient = data.recipient;
-    var fileUrl = data.file_url;
+    var channel = pusher.subscribe('my-channel');
+    channel.bind('my-event', function (data) {
+      // Handle the received message data
+      var message = data.message;
+      var sender = data.sender;
+      var recipient = data.recipient;
 
-    console.log('Received file URL:', fileUrl);
-    // Check if the recipient matches the selected recipient ID
-    if (recipient === "{{ recipient_id.username }}") {
       // Append the new message to the chat messages container
       var chatMessagesContainer = $('.chat-messages');
       var newMessageHtml = '';
@@ -224,10 +235,9 @@
             <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
               ${message}
             </div>
-            ${fileUrl ? `<a href="${fileUrl}" target="_blank">View File</a>` : ''}
           </div>
         `;
-      } else {
+      } else if (recipient === "{{ request.user.username }}") {
         newMessageHtml = `
           <div class="chat-message-left pb-4">
             <div>
@@ -237,80 +247,148 @@
               ${message}
             </div>
             <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
-            ${fileUrl ? `<a href="${fileUrl}" target="_blank">View File</a>` : ''}
           </div>
         `;
       }
 
-      chatMessagesContainer.append(newMessageHtml);
-      scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
-    }
-  });
-
- $('#send-message-form').submit(function (event) {
-  event.preventDefault(); // Prevent default form submission
-
-  var form = $(this);
-  var url = form.attr('action');
-  var formData = new FormData(form[0]); // Use FormData to handle form data including file
-
-  $.ajax({
-    type: 'POST',
-    url: url,
-    data: formData,
-    processData: false,
-    contentType: false,
-    success: function (response) {
-      console.log('Message sent successfully'); // Log success message
-
-      // Get the file URL from the response
-      var fileUrl = response.file;
-
-      // Trigger the Pusher event
-      pusher.trigger('my-channel', 'my-event', {
-        'message': '',
-        'sender': "{{ request.user.username }}",
-        'recipient': "{{ recipient_id.username }}",
-
-      });
-
-      // Append the new message to the chat messages container
-      var chatMessagesContainer = $('.chat-messages');
-      var newMessageHtml = `
-        <div class="chat-message-left pb-4">
-          <div>
-            <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
-          </div>
-          <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
-            ${message}
-          </div>
-          <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
-          ${fileUrl ? `<a href="${fileUrl}" target="_blank">View File</a>` : ''}
-        </div>
-      `;
-      chatMessagesContainer.append(newMessageHtml);
-      scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
-
-      form.find('#id_message').val('');  // Clear the message input field
-
-      if (form.find('#file').val() != '') {
-        var fileInput = form.find('#file');
-        var fileInfo = $('#file-info');
-        fileInfo.text('Selected file: ' + fileInput[0].files[0].name);  // Display the selected file name in the file info element
+      if (newMessageHtml !== '') {
+        chatMessagesContainer.append(newMessageHtml);
+        scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
       }
-    },
-    error: function (xhr, errmsg, err) {
-      console.log('Error sending message');  // Log error message
+    });
+
+    $('#send-message-form').submit(function (event) {
+      event.preventDefault(); // Prevent default form submission
+
+      var form = $(this);
+      var url = form.attr('action');
+      var formData = form.serialize(); // Serialize form data
+
+      var message = form.find('#id_message').val(); // Get the value of the message input field
+      var recipient = "{{ recipient_id.username }}"; // Set the selected recipient here
+
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: formData,
+        success: function (response) {
+          console.log('Message sent successfully'); // Log success message
+
+          // Trigger the Pusher event only if the recipient matches the selected recipient
+          if (recipient === "{{ recipient_id.username }}") {
+            pusher.trigger('my-channel', 'my-event', {
+              'message': message,
+              'sender': "{{ request.user.username }}",
+              'recipient': recipient
+            });
+          }
+
+          // Append the new message to the chat messages container
+          var chatMessagesContainer = $('.chat-messages');
+          var newMessageHtml = `
+            <div class="chat-message-left pb-4">
+              <div>
+                <img src="{{ recipient_id.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
+              </div>
+              <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
+                ${message}
+              </div>
+              <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+            </div>
+          `;
+
+          chatMessagesContainer.append(newMessageHtml);
+          scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+
+          form.find('#id_message').val(''); // Clear the message input field
+
+          if (form.find('#id_message').val() != '') {
+            alert('Message sent and input cleared.'); // Display an alert if the message input field is cleared
+          }
+        },
+        error: function (xhr, errmsg, err) {
+          console.log('Error sending message'); // Log error message
+        }
+      });
+    });
+
+    // Function to scroll to the bottom of the chat messages container
+    function scrollToBottom(container) {
+      container.scrollTop(container[0].scrollHeight);
     }
   });
-});
+</script>
 
-  // Function to scroll to the bottom of the chat messages container
-  function scrollToBottom(container) {
-    container.scrollTop(container[0].scrollHeight);
-  }
-});
+<script>  
+    $(document).ready(function () {
+      $('#uploadButton').click(function () {
+        var fileInput = document.getElementById('file');
+        var file = fileInput.files[0];
 
+        var formData = new FormData();
+        formData.append('file', file);
+
+        $.ajax({
+          url: '{% url "file-upload" recipient_id.id %}',
+          type: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          headers: {
+            'X-CSRFToken': $('[name="csrfmiddlewaretoken"]').val()
+          },
+          success: function (data) {
+            var fileUrl = data.file_url;
+            var fileName = file.name;
+
+            var fileExtension = fileName.substr(fileName.lastIndexOf('.'));
+            // alert(fileUrl);
+            // alert(fileName);
+            // alert(fileExtension);
+
+            var messageHtml = '<div class="chat-message-right mb-4">' +
+              '<div>' +
+              '<img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">' +
+              '<div class="text-muted small text-nowrap mt-2">' + data.timestamp + '</div>' +
+              '</div>' +
+              '<div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">' +
+              '<div class="font-weight-bold mb-1">You</div>';
+
+            // Append file preview based on file type
+            var fileExtension = file.name.substr(file.name.lastIndexOf('.'));
+            if (fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif')) {
+              // Image preview
+              messageHtml += '<div class="file-preview-card"><img src="' + data.file_url + '" class="img-fluid"></div>';
+            } else if (fileExtension.includes('.mp4') || fileExtension.includes('.avi') || fileExtension.includes('.mov')) {
+              // Video preview
+              messageHtml += '<div class="file-preview-card"><video src="' + data.file_url + '" controls></video></div>';
+            } else {
+              // Other file types (display file URL)
+              messageHtml += '<div class="file-preview-card"><p><a href="' + data.file_url + '">' + data.file_url + '</a></p></div>';
+            }
+
+            messageHtml += '</div>' +
+              '</div>';
+
+            // Append the new message with the file to the chat message display
+            $('.chat-messages').append(messageHtml);
+
+            // Scroll to the bottom of the chat message display
+            var chatMessages = document.querySelector('.chat-messages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Hide the file URL container
+            $('#fileUrlContainer').hide();
+            $('#exampleModal').modal('hide'); // Close the modal box
+          },
+          error: function (xhr, textStatus, error) {
+            console.error('Error uploading file:', error);
+            $('#file-info').text('Error uploading file');
+            alert('Error uploading file');
+          }
+        });
+      });
+    });
 </script>
 
 {% endblock %}
