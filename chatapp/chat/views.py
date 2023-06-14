@@ -80,6 +80,8 @@ class ChatView(TemplateView):
 
 class ChatDetailView(View):
     template_name = 'chat-detail.html'
+    
+
 
     def get(self, request, id):
         sender_id = request.user.id
@@ -96,8 +98,11 @@ class ChatDetailView(View):
             'messages': msgs,
             'form': form,
             'recipient_id': recipient_id,
+            'allowed_extensions': ['.jpg', '.jpeg', '.png', '.gif'],
+            'video_extensions': ['.mp4', '.avi', '.mov'],
   
         }
+        print(context,"/////////////////")
         return render(request, self.template_name, context)
 
     def post(self, request, id, *args, **kwargs):
@@ -149,6 +154,9 @@ class FileUploadView(APIView):
                 'file_url': message.file_url,
                 'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             }
+            # pusher  event trigger
+            send_pusher_event('my-channel', 'my-event', message_data)
+            
             return JsonResponse(message_data)
 
         return Response(serializer.errors, status=400)

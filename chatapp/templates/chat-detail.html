@@ -63,15 +63,18 @@
   .border-top {
     border-top: 1px solid #dee2e6 !important;
   }
+
   .file-preview-card {
-  width: 200px; /* Set the desired width */
-  height: 200px; /* Set the desired height */
-  border: 1px solid #ccc;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    width: 200px;
+    /* Set the desired width */
+    height: 200px;
+    /* Set the desired height */
+    border: 1px solid #ccc;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
 
   /* Responsive Styles */
@@ -93,7 +96,6 @@
       max-width: 568px;
     }
   }
-
 </style>
 
 <section>
@@ -124,12 +126,26 @@
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
           <div class="font-weight-bold mb-1">You</div>
           {{ message.message }}
-          <div id="fileUrlContainer">
-            {% if message.file_url %}
-            <p><a href="{{ message.file_url }}">{{ message.file_url }}</a></p>
+          {% with message.file_url as file_url %}
+          {% with file_url|slice:"-4:"|lower as file_extension %}
+            {% if file_extension in allowed_extensions %}
+              <!-- Image preview -->
+              <div class="file-preview-card">
+                <img src="{{ message.file_url }}" class="img-fluid">
+              </div>
+            {% elif file_extension in video_extensions %}
+              <!-- Video preview -->
+              <video src="{{ message.file_url }}" controls muted playsinline style="max-width: 350px; height: auto;">
+                Your browser does not support the video tag.
+              </video>
+            {% else %}
+              <!-- Other file types (display file name without URL) -->
+              <div class="file-preview-card">
+                <p>{{ message.file_url }}</p>
+              </div>
             {% endif %}
-          </div>
-          
+          {% endwith %}
+        {% endwith %}        
         </div>
       </div>
       {% else %}
@@ -142,13 +158,26 @@
         <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
           <div class="font-weight-bold mb-1"></div>
           {{ message.message }}
-          <div id="fileUrlContainer">
-            {% if message.file_url %}
-            <p>
-              <a href="{{ message.file_url }}">{{ message.file_url }}</a>
-            </p>
+          {% with message.file_url as file_url %}
+          {% with file_url|slice:"-4:"|lower as file_extension %}
+            {% if file_extension in allowed_extensions %}
+              <!-- Image preview -->
+              <div class="file-preview-card">
+                <img src="{{ message.file_url }}" class="img-fluid">
+              </div>
+            {% elif file_extension in video_extensions %}
+              <!-- Video preview -->
+              <video src="{{ message.file_url }}" controls muted playsinline style="max-width: 350px; height: auto;">
+                Your browser does not support the video tag.
+              </video>
+            {% else %}
+              <!-- Other file types (display file name without URL) -->
+              <div class="file-preview-card">
+                <p>{{ message.file_url }}</p>
+              </div>
             {% endif %}
-          </div>
+          {% endwith %}
+        {% endwith %}      
         </div>
         <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
       </div>
@@ -192,7 +221,7 @@
                   <button type="button" class="btn btn-primary" id="uploadButton">Upload</button>
                 </div>
               </form>
-                            
+
             </div>
           </div>
         </div>
@@ -250,8 +279,8 @@
           </div>
         `;
       }
-
-      if (newMessageHtml !== '') {
+      console.log(newMessageHtml, "new mesasage")
+      if (newMessageHtml !== '' && data.hasOwnProperty('message')) { //hasOwnProperty checks the key message is passing'
         chatMessagesContainer.append(newMessageHtml);
         scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
       }
@@ -319,76 +348,76 @@
   });
 </script>
 
-<script>  
-    $(document).ready(function () {
-      $('#uploadButton').click(function () {
-        var fileInput = document.getElementById('file');
-        var file = fileInput.files[0];
+<script>
+  $(document).ready(function () {
+    $('#uploadButton').click(function () {
+      var fileInput = document.getElementById('file');
+      var file = fileInput.files[0];
 
-        var formData = new FormData();
-        formData.append('file', file);
+      var formData = new FormData();
+      formData.append('file', file);
 
-        $.ajax({
-          url: '{% url "file-upload" recipient_id.id %}',
-          type: 'POST',
-          data: formData,
-          processData: false,
-          contentType: false,
-          headers: {
-            'X-CSRFToken': $('[name="csrfmiddlewaretoken"]').val()
-          },
-          success: function (data) {
-            var fileUrl = data.file_url;
-            var fileName = file.name;
+      $.ajax({
+        url: '{% url "file-upload" recipient_id.id %}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+          'X-CSRFToken': $('[name="csrfmiddlewaretoken"]').val()
+        },
+        success: function (data) {
+          var fileUrl = data.file_url;
+          var fileName = file.name;
 
-            var fileExtension = fileName.substr(fileName.lastIndexOf('.'));
-            // alert(fileUrl);
-            // alert(fileName);
-            // alert(fileExtension);
+          var fileExtension = fileName.substr(fileName.lastIndexOf('.'));
+          var messageHtml = '<div class="chat-message-right mb-4">' +
+            '<div>' +
+            '<img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">' +
+            '<div class="text-muted small text-nowrap mt-2">' + data.timestamp + '</div>' +
+            '</div>' +
+            '<div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">' +
+            '<div class="font-weight-bold mb-1">You</div>';
 
-            var messageHtml = '<div class="chat-message-right mb-4">' +
-              '<div>' +
-              '<img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">' +
-              '<div class="text-muted small text-nowrap mt-2">' + data.timestamp + '</div>' +
-              '</div>' +
-              '<div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">' +
-              '<div class="font-weight-bold mb-1">You</div>';
-
-            // Append file preview based on file type
-            var fileExtension = file.name.substr(file.name.lastIndexOf('.'));
-            if (fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif')) {
-              // Image preview
-              messageHtml += '<div class="file-preview-card"><img src="' + data.file_url + '" class="img-fluid"></div>';
-            } else if (fileExtension.includes('.mp4') || fileExtension.includes('.avi') || fileExtension.includes('.mov')) {
-              // Video preview
-              messageHtml += '<div class="file-preview-card"><video src="' + data.file_url + '" controls></video></div>';
-            } else {
-              // Other file types (display file URL)
-              messageHtml += '<div class="file-preview-card"><p><a href="' + data.file_url + '">' + data.file_url + '</a></p></div>';
-            }
-
-            messageHtml += '</div>' +
-              '</div>';
-
-            // Append the new message with the file to the chat message display
-            $('.chat-messages').append(messageHtml);
-
-            // Scroll to the bottom of the chat message display
-            var chatMessages = document.querySelector('.chat-messages');
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Hide the file URL container
-            $('#fileUrlContainer').hide();
-            $('#exampleModal').modal('hide'); // Close the modal box
-          },
-          error: function (xhr, textStatus, error) {
-            console.error('Error uploading file:', error);
-            $('#file-info').text('Error uploading file');
-            alert('Error uploading file');
+          // Append file preview based on file type
+          var fileExtension = file.name.substr(file.name.lastIndexOf('.'));
+          if (fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif')) {
+            // Image preview
+            messageHtml += '<div class="file-preview-card"><img src="' + data.file_url + '" class="img-fluid"></div>';
+          } else if (fileExtension.includes('.mp4') || fileExtension.includes('.avi') || fileExtension.includes('.mov')) {
+            // Video preview
+            messageHtml += '<div class="file-preview-card"><video src="' + data.file_url + '" controls></video></div>';
+          } else {
+            // Other file types (display file name without URL)
+            messageHtml += '<div class="file-preview-card"><p>' + file.name + '</p></div>';
           }
-        });
+
+          messageHtml += '</div>' +
+            '</div>';
+
+          // Append the new message with the file to the chat message display
+          $('.chat-messages').append(messageHtml);
+
+          // Scroll to the bottom of the chat message display
+          var chatMessages = document.querySelector('.chat-messages');
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+
+          // Hide the file URL container
+          $('#fileUrlContainer').hide();
+          $('#exampleModal').modal('hide'); // Close the modal box
+        },
+        error: function (xhr, textStatus, error) {
+          console.error('Error uploading file:', error);
+          $('#file-info').text('Error uploading file');
+          alert('Error uploading file');
+        }
       });
     });
+  });
 </script>
+
+
+
+
 
 {% endblock %}
