@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{%load custom_tags %}
 {% block content %}
 <style>
   body {
@@ -127,7 +127,7 @@
           <div class="font-weight-bold mb-1">You</div>
           {{ message.message }}
           {% with message.file_url as file_url %}
-          {% with file_url|slice:"-4:"|lower as file_extension %}
+          {% with file_url|get_extension as file_extension %}
             {% if file_extension in allowed_extensions %}
               <!-- Image preview -->
               <div class="file-preview-card">
@@ -135,17 +135,27 @@
               </div>
             {% elif file_extension in video_extensions %}
               <!-- Video preview -->
-              <video src="{{ message.file_url }}" controls muted playsinline style="max-width: 350px; height: auto;">
-                Your browser does not support the video tag.
-              </video>
+              <div class="file-preview-card" style="max-width: 500px; height: 300px;">
+                <video src="{{ message.file_url }}" controls muted playsinline style="max-width: 100%; height: 100%;">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            {% elif file_extension in audio_extensions %}
+              <!-- Audio preview -->
+              <div class="file-preview-card" style="background-color: #a7b9ab; padding: 10px; border-radius: 5px; margin-bottom: 10px; height: 70%;">
+                <audio src="{{ message.file_url }}" controls>
+                  Your browser does not support the audio tag.
+                </audio>
+              </div>
             {% else %}
               <!-- Other file types (display file name without URL) -->
-              <div class="file-preview-card">
+              <div>
                 <p>{{ message.file_url }}</p>
               </div>
             {% endif %}
           {% endwith %}
-        {% endwith %}        
+        {% endwith %}
+        
         </div>
       </div>
       {% else %}
@@ -159,7 +169,7 @@
           <div class="font-weight-bold mb-1"></div>
           {{ message.message }}
           {% with message.file_url as file_url %}
-          {% with file_url|slice:"-4:"|lower as file_extension %}
+          {% with file_url|get_extension as file_extension %}
             {% if file_extension in allowed_extensions %}
               <!-- Image preview -->
               <div class="file-preview-card">
@@ -167,17 +177,27 @@
               </div>
             {% elif file_extension in video_extensions %}
               <!-- Video preview -->
-              <video src="{{ message.file_url }}" controls muted playsinline style="max-width: 350px; height: auto;">
-                Your browser does not support the video tag.
-              </video>
+              <div class="file-preview-card" style="max-width: 500px; height: 300px;">
+                <video src="{{ message.file_url }}" controls muted playsinline style="max-width: 100%; height: 100%;">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            {% elif file_extension in audio_extensions %}
+              <!-- Audio preview -->
+              <div class="file-preview-card" style="background-color: #a7b9ab; padding: 10px; border-radius: 5px; margin-bottom: 10px; height: 70%;">
+                <audio src="{{ message.file_url }}" controls>
+                  Your browser does not support the audio tag.
+                </audio>
+              </div>
             {% else %}
               <!-- Other file types (display file name without URL) -->
-              <div class="file-preview-card">
+              <div>
                 <p>{{ message.file_url }}</p>
               </div>
             {% endif %}
           {% endwith %}
-        {% endwith %}      
+        {% endwith %}
+
         </div>
         <div class="text-muted small text-nowrap mt-2">{{ message.timestamp }}</div>
       </div>
@@ -249,6 +269,8 @@
       var message = data.message;
       var sender = data.sender;
       var recipient = data.recipient;
+      var fileUrl = data.file_url;
+      
 
       // Append the new message to the chat messages container
       var chatMessagesContainer = $('.chat-messages');
@@ -264,6 +286,7 @@
             <div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">
               ${message}
             </div>
+            ${fileUrl ? `<div>${fileUrl}</div>` : ''}
           </div>
         `;
       } else if (recipient === "{{ request.user.username }}") {
@@ -276,34 +299,34 @@
               ${message}
             </div>
             <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
+            ${fileUrl ? `<div>${fileUrl}</div>` : ''}
           </div>
         `;
       }
-      console.log(newMessageHtml, "new mesasage")
-      if (newMessageHtml !== '' && data.hasOwnProperty('message')) { //hasOwnProperty checks the key message is passing'
+      console.log(newMessageHtml, "new message")
+      if (newMessageHtml !== '' && data.hasOwnProperty('message')) {
         chatMessagesContainer.append(newMessageHtml);
-        scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+        scrollToBottom(chatMessagesContainer);
       }
     });
 
     $('#send-message-form').submit(function (event) {
-      event.preventDefault(); // Prevent default form submission
+      event.preventDefault();
 
       var form = $(this);
       var url = form.attr('action');
-      var formData = form.serialize(); // Serialize form data
+      var formData = form.serialize();
 
-      var message = form.find('#id_message').val(); // Get the value of the message input field
-      var recipient = "{{ recipient_id.username }}"; // Set the selected recipient here
+      var message = form.find('#id_message').val();
+      var recipient = "{{ recipient_id.username }}";
 
       $.ajax({
         type: 'POST',
         url: url,
         data: formData,
         success: function (response) {
-          console.log('Message sent successfully'); // Log success message
+          console.log('Message sent successfully');
 
-          // Trigger the Pusher event only if the recipient matches the selected recipient
           if (recipient === "{{ recipient_id.username }}") {
             pusher.trigger('my-channel', 'my-event', {
               'message': message,
@@ -312,7 +335,6 @@
             });
           }
 
-          // Append the new message to the chat messages container
           var chatMessagesContainer = $('.chat-messages');
           var newMessageHtml = `
             <div class="chat-message-left pb-4">
@@ -325,31 +347,106 @@
               <div class="text-muted small text-nowrap mt-2">${new Date().toLocaleString()}</div>
             </div>
           `;
+        // Check if a file was uploaded
+        var fileInput = form.find('#id_file');
+        if (fileInput[0].files.length > 0) {
+          var file = fileInput[0].files[0];
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            var fileUrl = e.target.result;
+
+            // Trigger the event with the message and file data
+            pusher.trigger('my-channel', 'my-event', {
+              'message': message,
+              'sender': "{{ request.user.username }}",
+              'recipient': recipient,
+              'file_url': fileUrl
+            });
+             // Append the new message to the chat messages container
+             chatMessagesContainer.append(newMessageHtml);
+            scrollToBottom(chatMessagesContainer);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // Trigger the event without file data
+          pusher.trigger('my-channel', 'my-event', {
+            'message': message,
+            'sender': "{{ request.user.username }}",
+            'recipient': recipient
+          });
+
 
           chatMessagesContainer.append(newMessageHtml);
-          scrollToBottom(chatMessagesContainer); // Scroll to the bottom of the chat messages container
+          scrollToBottom(chatMessagesContainer);
+        }
 
           form.find('#id_message').val(''); // Clear the message input field
+          form.find('#id_message').focus(); // Focus on the message input field
 
           if (form.find('#id_message').val() != '') {
-            alert('Message sent and input cleared.'); // Display an alert if the message input field is cleared
+            alert('Message sent and input cleared.');
           }
         },
         error: function (xhr, errmsg, err) {
-          console.log('Error sending message'); // Log error message
+          console.log('Error sending message');
         }
       });
     });
 
-    // Function to scroll to the bottom of the chat messages container
     function scrollToBottom(container) {
       container.scrollTop(container[0].scrollHeight);
     }
   });
 </script>
 
+
 <script>
   $(document).ready(function () {
+    const pusher = new Pusher('99d02ed61a52d34cd27c', {
+      cluster: 'mt1',
+      // Add any other configuration options you need
+    });
+
+    const channel = pusher.subscribe('file-upload');
+    channel.bind('new-file', function (data) {
+      var fileUrl = data.fileUrl;
+      var fileName = data.fileName;
+      var fileExtension = data.fileExtension;
+
+      var messageHtml = '<div class="chat-message-right mb-4">' +
+        '<div>' +
+        '<img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">' +
+        '<div class="text-muted small text-nowrap mt-2">' + data.timestamp + '</div>' +
+        '</div>' +
+        '<div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">' +
+        '<div class="font-weight-bold mb-1">You</div>';
+
+      // Append file preview based on file type
+      if (fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif')) {
+        // Image preview
+        messageHtml += '<div class="file-preview-card"><img src="' + fileUrl + '" class="img-fluid"></div>';
+      } else if (fileExtension.includes('.mp4') || fileExtension.includes('.avi') || fileExtension.includes('.mov')) {
+        // Video preview
+        messageHtml += '<div class="file-preview-card" style="max-width: 500px; height: 300px;"><video src="' + fileUrl + '" controls muted playsinline style="max-width: 100%; height: 100%;"></video></div>';
+      } else if (fileExtension.includes('.mp3') || fileExtension.includes('.wav') || fileExtension.includes('.ogg')) {
+        // Audio preview
+        messageHtml += '<div class="file-preview-card" style="background-color: #a7b9ab; padding: 10px; border-radius: 5px; margin-bottom: 10px; height: 70%;"><audio src="' + fileUrl + '" controls ></audio></div>';
+      } else {
+        // Other file types (display file name without URL)
+        messageHtml += '<div class="file-preview-card"><p>' + fileUrl + '</p></div>';
+      }
+
+      messageHtml += '</div>' +
+        '</div>';
+
+      // Append the new message with the file to the chat message display
+      $('.chat-messages').append(messageHtml);
+
+      // Scroll to the bottom of the chat message display
+      var chatMessages = document.querySelector('.chat-messages');
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
     $('#uploadButton').click(function () {
       var fileInput = document.getElementById('file');
       var file = fileInput.files[0];
@@ -369,42 +466,16 @@
         success: function (data) {
           var fileUrl = data.file_url;
           var fileName = file.name;
-
           var fileExtension = fileName.substr(fileName.lastIndexOf('.'));
-          var messageHtml = '<div class="chat-message-right mb-4">' +
-            '<div>' +
-            '<img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">' +
-            '<div class="text-muted small text-nowrap mt-2">' + data.timestamp + '</div>' +
-            '</div>' +
-            '<div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">' +
-            '<div class="font-weight-bold mb-1">You</div>';
 
-          // Append file preview based on file type
-          var fileExtension = file.name.substr(file.name.lastIndexOf('.'));
-          if (fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif')) {
-            // Image preview
-            messageHtml += '<div class="file-preview-card"><img src="' + data.file_url + '" class="img-fluid"></div>';
-          } else if (fileExtension.includes('.mp4') || fileExtension.includes('.avi') || fileExtension.includes('.mov')) {
-            // Video preview
-            messageHtml += '<div class="file-preview-card"><video src="' + data.file_url + '" controls></video></div>';
-          } else {
-            // Other file types (display file name without URL)
-            messageHtml += '<div class="file-preview-card"><p>' + file.name + '</p></div>';
-          }
+          // Send the file information to Pusher
+          channel.trigger('my-channel','my-event', {
+            fileUrl: fileUrl,
+            fileName: fileName,
+            fileExtension: fileExtension
+          });
 
-          messageHtml += '</div>' +
-            '</div>';
-
-          // Append the new message with the file to the chat message display
-          $('.chat-messages').append(messageHtml);
-
-          // Scroll to the bottom of the chat message display
-          var chatMessages = document.querySelector('.chat-messages');
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-
-          // Hide the file URL container
-          $('#fileUrlContainer').hide();
-          $('#exampleModal').modal('hide'); // Close the modal box
+          // Rest of your existing code...
         },
         error: function (xhr, textStatus, error) {
           console.error('Error uploading file:', error);
@@ -415,9 +486,5 @@
     });
   });
 </script>
-
-
-
-
 
 {% endblock %}

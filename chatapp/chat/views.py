@@ -80,8 +80,6 @@ class ChatView(TemplateView):
 
 class ChatDetailView(View):
     template_name = 'chat-detail.html'
-    
-
 
     def get(self, request, id):
         sender_id = request.user.id
@@ -100,9 +98,11 @@ class ChatDetailView(View):
             'recipient_id': recipient_id,
             'allowed_extensions': ['.jpg', '.jpeg', '.png', '.gif'],
             'video_extensions': ['.mp4', '.avi', '.mov'],
+            'audio_extensions' : ['.mp3','.wav','.ogg'],
   
         }
-        print(context,"/////////////////")
+
+
         return render(request, self.template_name, context)
 
     def post(self, request, id, *args, **kwargs):
