@@ -206,7 +206,7 @@
     </div>
 
     <div class="flex-grow-0 py-3 px-4 border-top form-container">
-      <form id="send-message-form" method="POST" action="{% url 'send_message' recipient_id.id %}"
+      <form id="send-message-form" method="POST" action="{% url 'send-message' recipient_id.id %}"
         enctype="multipart/form-data">
         {% csrf_token %}
         <div class="form-button-wrapper mx-2 p-2">
@@ -402,51 +402,6 @@
 
 <script>
   $(document).ready(function () {
-    const pusher = new Pusher('99d02ed61a52d34cd27c', {
-      cluster: 'mt1',
-      // Add any other configuration options you need
-    });
-
-    const channel = pusher.subscribe('file-upload');
-    channel.bind('new-file', function (data) {
-      var fileUrl = data.fileUrl;
-      var fileName = data.fileName;
-      var fileExtension = data.fileExtension;
-
-      var messageHtml = '<div class="chat-message-right mb-4">' +
-        '<div>' +
-        '<img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">' +
-        '<div class="text-muted small text-nowrap mt-2">' + data.timestamp + '</div>' +
-        '</div>' +
-        '<div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">' +
-        '<div class="font-weight-bold mb-1">You</div>';
-
-      // Append file preview based on file type
-      if (fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif')) {
-        // Image preview
-        messageHtml += '<div class="file-preview-card"><img src="' + fileUrl + '" class="img-fluid"></div>';
-      } else if (fileExtension.includes('.mp4') || fileExtension.includes('.avi') || fileExtension.includes('.mov')) {
-        // Video preview
-        messageHtml += '<div class="file-preview-card" style="max-width: 500px; height: 300px;"><video src="' + fileUrl + '" controls muted playsinline style="max-width: 100%; height: 100%;"></video></div>';
-      } else if (fileExtension.includes('.mp3') || fileExtension.includes('.wav') || fileExtension.includes('.ogg')) {
-        // Audio preview
-        messageHtml += '<div class="file-preview-card" style="background-color: #a7b9ab; padding: 10px; border-radius: 5px; margin-bottom: 10px; height: 70%;"><audio src="' + fileUrl + '" controls ></audio></div>';
-      } else {
-        // Other file types (display file name without URL)
-        messageHtml += '<div class="file-preview-card"><p>' + fileUrl + '</p></div>';
-      }
-
-      messageHtml += '</div>' +
-        '</div>';
-
-      // Append the new message with the file to the chat message display
-      $('.chat-messages').append(messageHtml);
-
-      // Scroll to the bottom of the chat message display
-      var chatMessages = document.querySelector('.chat-messages');
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-
     $('#uploadButton').click(function () {
       var fileInput = document.getElementById('file');
       var file = fileInput.files[0];
@@ -467,15 +422,38 @@
           var fileUrl = data.file_url;
           var fileName = file.name;
           var fileExtension = fileName.substr(fileName.lastIndexOf('.'));
+          var messageHtml = '<div class="chat-message-right mb-4">' +
+            '<div>' +
+            '<img src="{{ request.user.userprofile.profile_picture.url }}" class="rounded-circle mr-1" alt="Chris Wood" width="40" height="40">' +
+            '<div class="text-muted small text-nowrap mt-2">' + data.timestamp + '</div>' +
+            '</div>' +
+            '<div class="flex-shrink-1 bg-light rounded py-2 px-3 mr-3">' +
+            '<div class="font-weight-bold mb-1">You</div>';
 
-          // Send the file information to Pusher
-          channel.trigger('my-channel','my-event', {
-            fileUrl: fileUrl,
-            fileName: fileName,
-            fileExtension: fileExtension
-          });
+          // Append file preview based on file type
+          if (fileExtension.includes('.jpg') || fileExtension.includes('.jpeg') || fileExtension.includes('.png') || fileExtension.includes('.gif')) {
+            // Image preview
+            messageHtml += '<div class="file-preview-card"><img src="' + fileUrl + '" class="img-fluid"></div>';
+          } else if (fileExtension.includes('.mp4') || fileExtension.includes('.avi') || fileExtension.includes('.mov')) {
+            // Video preview
+            messageHtml += '<div class="file-preview-card" style="max-width: 500px; height: 300px;"><video src="' + fileUrl + '" controls muted playsinline style="max-width: 100%; height: 100%;"></video></div>';
+          } else if (fileExtension.includes('.mp3') || fileExtension.includes('.wav') || fileExtension.includes('.ogg')) {
+            // Audio preview
+            messageHtml += '<div class="file-preview-card" style="background-color: #a7b9ab; padding: 10px; border-radius: 5px; margin-bottom: 10px; height: 70%;"><audio src="' + fileUrl + '" controls ></audio></div>';
+          } else {
+            // Other file types (display file name without URL)
+            messageHtml += '<div class="file-preview-card"><p>' + fileUrl + '</p></div>';
+          }
 
-          // Rest of your existing code...
+          messageHtml += '</div>' +
+            '</div>';
+
+          // Append the new message with the file to the chat message display
+          $('.chat-messages').append(messageHtml);
+
+          // Scroll to the bottom of the chat message display
+          var chatMessages = document.querySelector('.chat-messages');
+          chatMessages.scrollTop = chatMessages.scrollHeight;
         },
         error: function (xhr, textStatus, error) {
           console.error('Error uploading file:', error);
@@ -486,5 +464,6 @@
     });
   });
 </script>
+
 
 {% endblock %}

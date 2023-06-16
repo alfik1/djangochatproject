@@ -13,8 +13,9 @@ urlpatterns = [
     path("signout/",views.signout_view, name="signout"),
     path("chat/",views.ChatView.as_view(), name="chat"),
     path("details/<int:id>",views.ChatDetailView.as_view(), name="chat-detail"),
-    path('chat/<int:id>/', views.ChatDetailView.as_view(), name='send_message'),
-    path('upload/<int:id>/', views.FileUploadView.as_view(), name='file-upload')
+    path('chat/<int:id>/', views.ChatDetailView.as_view(), name='send-message'),
+    path('upload/<int:id>/', views.FileUploadView.as_view(), name='file-upload'),
+    path('create-group/', views.GroupCreateView.as_view(), name='create-group')
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

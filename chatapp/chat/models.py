@@ -32,6 +32,26 @@ class DirectMessage(models.Model):
     def __str__(self):
             return f"{self.sender.username} -> {self.recipient.username}"
     
+
+class Group(models.Model):
+    name = models.CharField(max_length=50)
+    members = models.ManyToManyField(User, related_name="group_users")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+
+
+class GroupChat(models.Model):
+    group = models.ForeignKey(Group,on_delete=models.CASCADE)
+    sender = models.ForeignKey(User,on_delete=models.CASCADE,related_name="sent_group_messages")
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f'{self.sender.username} - {self.group.name}'
+    
+    
     
     
 

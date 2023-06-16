@@ -160,3 +160,24 @@ class FileUploadView(APIView):
             return JsonResponse(message_data)
 
         return Response(serializer.errors, status=400)
+
+
+class GroupCreateView(APIView):
+    
+    def post(self, request, format=None):
+         
+        name = request.data.get('name')
+        memebers = request.data.get('members',[]) # to retrieve the list of members from the request data in an API view
+        
+        #group creation
+        group = Group.objects.create(name=name)
+        
+        # Add members to the group
+        for member_id in members:
+            try:
+                member = User.objects.get(id=member_id)
+                group.members.add(member)
+            except User.DoesNotExist:
+                return Response({'error': f"User with ID {member_id} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'success': 'Group created successfully'}, status=status.HTTP_201_CREATED)
